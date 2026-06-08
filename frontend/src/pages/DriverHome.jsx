@@ -2,7 +2,7 @@
 // Works with rideStore.js for shared state across tabs
 
 import { useState, useEffect } from "react";
-import { rideStore } from "../store/rideStore";
+import { rideStore } from "../rideStore";
 
 const CAMPUS_LOCATIONS = [
   { id: "gate_main",    label: "Main Gate" },

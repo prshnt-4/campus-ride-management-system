@@ -4,7 +4,7 @@
 //   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
 import { useState, useEffect, useRef } from "react";
-import { rideStore } from "../store/rideStore";
+import { rideStore } from "../rideStore";
 
 // ── IIT Roorkee landmarks ──────────────────────────────────────────
 const CAMPUS_CENTER = [29.8673, 77.8956];

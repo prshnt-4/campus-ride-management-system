@@ -8,7 +8,7 @@ import { useState } from "react";
    Backend: replace API_BASE with your Express URL
 ───────────────────────────────────────── */
 
-const API_BASE = "http://localhost:5000/api";
+const API_BASE = "http://localhost:5001/api";
 
 // ── tiny helper ──────────────────────────
 async function apiFetch(path, body) {
