@@ -252,8 +252,9 @@ export default function PassengerHome({ user, onLogout }) {
 
   function handleCancel() {
     if (!ride) return;
+
     rideStore.cancelRide(ride.id, "passenger");
-    setRide(r => ({ ...r, status: "cancelled" }));
+    setRide({ ...ride, status: "cancelled" });
   }
 
   function handleMapClick(locId) {

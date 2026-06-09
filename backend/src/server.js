@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const authRoutes = require("./routes/authRoutes");
 const rideRoutes = require("./routes/rideRoutes");
 const bookingRoutes = require("./routes/bookingRoutes");
+const driverRoutes = require("./routes/driverRoutes");
 
 
 
@@ -29,7 +30,7 @@ const PORT = process.env.PORT || 5001;
 app.use("/api/auth", authRoutes);
 app.use("/api/rides", rideRoutes);
 app.use("/api/bookings", bookingRoutes);
-
+app.use("/api/drivers", driverRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
