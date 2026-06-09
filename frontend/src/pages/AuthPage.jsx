@@ -178,9 +178,10 @@ function LoginForm({ onSwitch, onSuccess }) {
     setToast(null);
     try {
       const data = await apiFetch("/auth/login", { email, password, role });
+      const userWithRole = { ...data.user, role };
       localStorage.setItem("rnn_token", data.token);
-      localStorage.setItem("rnn_user", JSON.stringify(data.user));
-      onSuccess(data.user);
+      localStorage.setItem("rnn_user", JSON.stringify(userWithRole));
+      onSuccess(userWithRole);
     } catch (err) {
       setToast({ msg: err.message, type: "error" });
     } finally {
@@ -258,9 +259,10 @@ function RegisterForm({ onSwitch, onSuccess }) {
         } : {}),
       };
       const data = await apiFetch("/auth/register", payload);
+      const userWithRole = { ...data.user, role };
       localStorage.setItem("rnn_token", data.token);
-      localStorage.setItem("rnn_user", JSON.stringify(data.user));
-      onSuccess(data.user);
+      localStorage.setItem("rnn_user", JSON.stringify(userWithRole));
+      onSuccess(userWithRole);
     } catch (err) {
       setToast({ msg: err.message, type: "error" });
     } finally {
@@ -342,13 +344,6 @@ export default function AuthPage({ onAuthSuccess }) {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #f4f4f0; font-family: 'Sora', sans-serif; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
         .auth-card { animation: fadeUp 0.4s ease; }
       `}</style>
 

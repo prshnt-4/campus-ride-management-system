@@ -3,8 +3,8 @@
 // Replace with Socket.IO calls when backend is ready
 // Every method maps directly to a backend API/socket event
 
-const DRIVERS_KEY  = "rnn_drivers";
-const RIDES_KEY    = "rnn_rides";
+const DRIVERS_KEY  = "rnn_d";
+const RIDES_KEY    = "rnn_r";
 
 function read(key)       { try { return JSON.parse(localStorage.getItem(key) || "{}"); } catch { return {}; } }
 function readArr(key)    { try { return JSON.parse(localStorage.getItem(key) || "[]"); } catch { return []; } }
@@ -171,9 +171,41 @@ export const rideStore = {
     return rides.filter(r => r.driverId === driverId);
   },
 
+  // ── RATINGS ────────────────────────────────────────────────────
+
+  submitRating({ rideId, driverId, driverName, passengerId, stars, tags, feedback }) {
+    // mark ride as rated
+    const rides = readArr(RIDES_KEY);
+    const idx = rides.findIndex(r => r.id === rideId);
+    if (idx !== -1) { rides[idx].rated = true; write(RIDES_KEY, rides); }
+
+    // store rating under driver key
+    const key = "rnn_ratings_" + driverId;
+    const prev = readArr(key);
+    prev.push({ rideId, driverId, driverName, passengerId, stars, tags, feedback, createdAt: Date.now() });
+    localStorage.setItem(key, JSON.stringify(prev));
+
+    // update driver avg rating
+    const all = read(DRIVERS_KEY);
+    if (all[driverId]) {
+      const avg = (prev.reduce((s, r) => s + r.stars, 0) / prev.length).toFixed(1);
+      all[driverId].rating = avg;
+      write(DRIVERS_KEY, all);
+    }
+  },
+
+  getRatings(driverId) {
+    return readArr("rnn_ratings_" + driverId);
+  },
+
+  needsRating(ride) {
+    return ride && ride.status === "completed" && !ride.rated;
+  },
+
   // ── DEV UTILS ─────────────────────────────────────────────────
   clearAll() {
     localStorage.removeItem(DRIVERS_KEY);
     localStorage.removeItem(RIDES_KEY);
   },
 };
+

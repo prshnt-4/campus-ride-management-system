@@ -5,6 +5,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { rideStore } from "../rideStore";
+import RatingModal from "./RatingModal";
 
 // ── IIT Roorkee landmarks ──────────────────────────────────────────
 const CAMPUS_CENTER = [29.8673, 77.8956];
@@ -140,21 +141,6 @@ function CampusMap({ pickupId, destinationId, drivers, onLocationClick }) {
   }, []);
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      if (mapInstance.current) clearInterval(interval);
-      if (typeof window !== "undefined" && window.L && mapRef.current && !mapInstance.current) {
-        const L = window.L;
-        const map = L.map(mapRef.current, { center: CAMPUS_CENTER, zoom: 15.5 });
-        L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-          attribution: "© OpenStreetMap contributors", maxZoom: 19,
-        }).addTo(map);
-        mapInstance.current = map;
-      }
-    }, 300);
-    return () => clearInterval(interval);
-  }, []);
-
-  useEffect(() => {
     if (!mapInstance.current || !window.L) return;
     const L = window.L;
     const map = mapInstance.current;
@@ -231,13 +217,22 @@ export default function PassengerHome({ user, onLogout }) {
   const [drivers,     setDrivers]     = useState([]);
   const [mapClickMode,setMapClickMode]= useState(null); // "pickup" | "destination" | null
   const [tab,         setTab]         = useState("request"); // "request" | "drivers"
+  const [showRating,  setShowRating]  = useState(false);
+  const prevStatusRef = useRef(null);
 
   // poll store every 2s for live updates
   useEffect(() => {
     const sync = () => {
       setDrivers(rideStore.getOnlineDrivers());
       const myRide = rideStore.getPassengerRide(user.id);
-      if (myRide) setRide(myRide);
+      if (myRide) {
+        // trigger rating modal the moment status flips to "completed"
+        if (myRide.status === "completed" && prevStatusRef.current !== "completed" && !myRide.rated) {
+          setShowRating(true);
+        }
+        prevStatusRef.current = myRide.status;
+        setRide(myRide);
+      }
     };
     sync();
     const id = setInterval(sync, 2000);
@@ -273,21 +268,7 @@ export default function PassengerHome({ user, onLogout }) {
     <>
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap');
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: #f4f4f0; font-family: 'Sora', sans-serif; }
-        .tab-btn { border: none; background: none; cursor: pointer;
-          padding: 8px 18px; border-radius: 20px; font-size: 13px;
-          font-weight: 700; font-family: 'Sora', sans-serif; transition: all 0.2s; }
-        .tab-btn.active { background: #111; color: #fff; }
-        .tab-btn:not(.active) { color: #888; }
-        .map-btn { border: 1.5px solid #ddd; background: #fff; cursor: pointer;
-          padding: 7px 14px; border-radius: 8px; font-size: 12px;
-          font-weight: 700; font-family: 'Sora', sans-serif; transition: all 0.2s; }
-        .map-btn.active { background: #111; color: #fff; border-color: #111; }
       `}</style>
-      <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-      <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" />
-
       <div style={{ minHeight: "100vh", background: "#f4f4f0", fontFamily: "'Sora', sans-serif" }}>
 
         {/* ── navbar ── */}
@@ -442,6 +423,17 @@ export default function PassengerHome({ user, onLogout }) {
           )}
         </div>
       </div>
+
+      {/* ── Rating modal — appears when ride completes ── */}
+      {showRating && ride && ride.status === "completed" && (
+        <RatingModal
+          ride={ride}
+          onSubmit={({ stars, tags, feedback }) => {
+            setShowRating(false);
+          }}
+          onSkip={() => setShowRating(false)}
+        />
+      )}
     </>
   );
 }
