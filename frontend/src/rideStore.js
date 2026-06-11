@@ -43,6 +43,18 @@ export const rideStore = {
     return Object.values(all).filter(d => d.isOnline);
   },
 
+  updateDriverLocation(driverId, lat,lng){
+    const all = read(DRIVERS_KEY);
+
+    if (!all[driverId]) return;
+
+    all[driverId].coords = [lat,lng];
+    all[driverId].updatedAt = Date.now();
+
+    write(DRIVERS_KEY,all);
+
+  },
+
   // ── RIDE LIFECYCLE ─────────────────────────────────────────────
 
   // Passenger requests a ride → status: "requesting"

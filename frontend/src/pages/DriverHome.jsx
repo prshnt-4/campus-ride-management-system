@@ -3,20 +3,21 @@
 
 import { useState, useEffect } from "react";
 import { rideStore } from "../rideStore";
+import socket from "../socket";
 
 const CAMPUS_LOCATIONS = [
-  { id: "gate_main",    label: "Main Gate" },
-  { id: "gate_civil",   label: "Civil Lines Gate" },
-  { id: "thomso",       label: "Thomso Bhawan" },
-  { id: "convocation",  label: "Convocation Hall" },
-  { id: "library",      label: "James Thomason Library" },
+  { id: "gate_main", label: "Main Gate" },
+  { id: "gate_civil", label: "Civil Lines Gate" },
+  { id: "thomso", label: "Thomso Bhawan" },
+  { id: "convocation", label: "Convocation Hall" },
+  { id: "library", label: "James Thomason Library" },
   { id: "lecture_hall", label: "Lecture Hall Complex" },
-  { id: "hostel_bhawan",label: "Bhawan (Hostels)" },
-  { id: "sports",       label: "Sports Complex" },
-  { id: "hospital",     label: "IITR Hospital" },
-  { id: "admin",        label: "Admin Block" },
-  { id: "canteen",      label: "New Canteen" },
-  { id: "workshop",     label: "Workshop / Machine Lab" },
+  { id: "hostel_bhawan", label: "Bhawan (Hostels)" },
+  { id: "sports", label: "Sports Complex" },
+  { id: "hospital", label: "IITR Hospital" },
+  { id: "admin", label: "Admin Block" },
+  { id: "canteen", label: "New Canteen" },
+  { id: "workshop", label: "Workshop / Machine Lab" },
 ];
 
 function locLabel(id) {
@@ -42,10 +43,14 @@ function PulseDot({ color }) {
 // ── metric card ──────────────────────────────────────────────────
 function StatCard({ label, value, sub, color = "#111" }) {
   return (
-    <div style={{ background: "#f9f9f9", borderRadius: 14, padding: "16px 20px",
-      border: "1px solid #eee", flex: 1 }}>
-      <p style={{ margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase",
-        letterSpacing: "0.06em", color: "#aaa" }}>{label}</p>
+    <div style={{
+      background: "#f9f9f9", borderRadius: 14, padding: "16px 20px",
+      border: "1px solid #eee", flex: 1
+    }}>
+      <p style={{
+        margin: 0, fontSize: 11, fontWeight: 700, textTransform: "uppercase",
+        letterSpacing: "0.06em", color: "#aaa"
+      }}>{label}</p>
       <p style={{ margin: "6px 0 2px", fontSize: 26, fontWeight: 700, color, lineHeight: 1 }}>{value}</p>
       {sub && <p style={{ margin: 0, fontSize: 11, color: "#aaa" }}>{sub}</p>}
     </div>
@@ -62,11 +67,15 @@ function RequestCard({ request, onAccept, onReject }) {
   }, [timer]);
 
   return (
-    <div style={{ background: "#fff", border: "2px solid #1a73e8", borderRadius: 18,
-      padding: 20, marginBottom: 16, position: "relative", overflow: "hidden" }}>
+    <div style={{
+      background: "#fff", border: "2px solid #1a73e8", borderRadius: 18,
+      padding: 20, marginBottom: 16, position: "relative", overflow: "hidden"
+    }}>
       {/* timer bar */}
-      <div style={{ position: "absolute", top: 0, left: 0, height: 4, background: "#e8f0fe",
-        width: "100%" }}>
+      <div style={{
+        position: "absolute", top: 0, left: 0, height: 4, background: "#e8f0fe",
+        width: "100%"
+      }}>
         <div style={{
           height: "100%", background: timer > 10 ? "#1a73e8" : "#e74c3c",
           width: `${(timer / 30) * 100}%`, transition: "width 1s linear, background 0.3s",
@@ -81,24 +90,34 @@ function RequestCard({ request, onAccept, onReject }) {
             Passenger: <strong style={{ color: "#111" }}>{request.passengerName}</strong>
           </p>
         </div>
-        <span style={{ fontSize: 13, fontWeight: 700, color: timer > 10 ? "#1a73e8" : "#e74c3c",
+        <span style={{
+          fontSize: 13, fontWeight: 700, color: timer > 10 ? "#1a73e8" : "#e74c3c",
           background: timer > 10 ? "#e8f0fe" : "#fff0f0",
-          padding: "4px 10px", borderRadius: 20 }}>{timer}s</span>
+          padding: "4px 10px", borderRadius: 20
+        }}>{timer}s</span>
       </div>
       <div style={{ margin: "14px 0", display: "flex", gap: 12 }}>
-        <div style={{ flex: 1, background: "#f0fff4", borderRadius: 10, padding: "10px 14px",
-          border: "1px solid #b7f5cf" }}>
-          <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "#27ae60",
-            textTransform: "uppercase", letterSpacing: "0.06em" }}>Pickup</p>
+        <div style={{
+          flex: 1, background: "#f0fff4", borderRadius: 10, padding: "10px 14px",
+          border: "1px solid #b7f5cf"
+        }}>
+          <p style={{
+            margin: 0, fontSize: 10, fontWeight: 700, color: "#27ae60",
+            textTransform: "uppercase", letterSpacing: "0.06em"
+          }}>Pickup</p>
           <p style={{ margin: "3px 0 0", fontSize: 13, fontWeight: 700, color: "#111" }}>
             {locLabel(request.pickup)}
           </p>
         </div>
         <div style={{ display: "flex", alignItems: "center", color: "#ccc", fontSize: 20 }}>→</div>
-        <div style={{ flex: 1, background: "#fff0f0", borderRadius: 10, padding: "10px 14px",
-          border: "1px solid #fcc" }}>
-          <p style={{ margin: 0, fontSize: 10, fontWeight: 700, color: "#e74c3c",
-            textTransform: "uppercase", letterSpacing: "0.06em" }}>Drop-off</p>
+        <div style={{
+          flex: 1, background: "#fff0f0", borderRadius: 10, padding: "10px 14px",
+          border: "1px solid #fcc"
+        }}>
+          <p style={{
+            margin: 0, fontSize: 10, fontWeight: 700, color: "#e74c3c",
+            textTransform: "uppercase", letterSpacing: "0.06em"
+          }}>Drop-off</p>
           <p style={{ margin: "3px 0 0", fontSize: 13, fontWeight: 700, color: "#111" }}>
             {locLabel(request.destination)}
           </p>
@@ -106,15 +125,19 @@ function RequestCard({ request, onAccept, onReject }) {
       </div>
       <div style={{ display: "flex", gap: 10 }}>
         <button onClick={() => onReject(request.id)}
-          style={{ flex: 1, padding: "12px 0", borderRadius: 12, border: "1.5px solid #eee",
+          style={{
+            flex: 1, padding: "12px 0", borderRadius: 12, border: "1.5px solid #eee",
             background: "#fafafa", color: "#888", fontWeight: 700, fontSize: 14,
-            cursor: "pointer", fontFamily: "inherit" }}>
+            cursor: "pointer", fontFamily: "inherit"
+          }}>
           ✕ Decline
         </button>
         <button onClick={() => onAccept(request.id)}
-          style={{ flex: 2, padding: "12px 0", borderRadius: 12, border: "none",
+          style={{
+            flex: 2, padding: "12px 0", borderRadius: 12, border: "none",
             background: "#111", color: "#fff", fontWeight: 700, fontSize: 14,
-            cursor: "pointer", fontFamily: "inherit" }}>
+            cursor: "pointer", fontFamily: "inherit"
+          }}>
           ✓ Accept ride
         </button>
       </div>
@@ -125,11 +148,15 @@ function RequestCard({ request, onAccept, onReject }) {
 // ── active ride card ─────────────────────────────────────────────
 function ActiveRideCard({ ride, onComplete }) {
   return (
-    <div style={{ background: "#f6f8ff", border: "2px solid #8e44ad22", borderRadius: 18,
-      padding: 20, marginBottom: 16 }}>
+    <div style={{
+      background: "#f6f8ff", border: "2px solid #8e44ad22", borderRadius: 18,
+      padding: 20, marginBottom: 16
+    }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 14 }}>
-        <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#8e44ad",
-          display: "inline-block" }} />
+        <span style={{
+          width: 10, height: 10, borderRadius: "50%", background: "#8e44ad",
+          display: "inline-block"
+        }} />
         <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: "#111" }}>Ride in progress</p>
       </div>
       <p style={{ margin: "0 0 4px", fontSize: 13, color: "#555" }}>
@@ -139,9 +166,11 @@ function ActiveRideCard({ ride, onComplete }) {
         {locLabel(ride.pickup)} → {locLabel(ride.destination)}
       </p>
       <button onClick={() => onComplete(ride.id)}
-        style={{ width: "100%", padding: "13px 0", borderRadius: 12, border: "none",
+        style={{
+          width: "100%", padding: "13px 0", borderRadius: 12, border: "none",
           background: "#27ae60", color: "#fff", fontWeight: 700, fontSize: 14,
-          cursor: "pointer", fontFamily: "inherit" }}>
+          cursor: "pointer", fontFamily: "inherit"
+        }}>
         ✓ Mark as completed
       </button>
     </div>
@@ -152,8 +181,10 @@ function ActiveRideCard({ ride, onComplete }) {
 function HistoryRow({ ride }) {
   const statusColor = { completed: "#27ae60", cancelled: "#e74c3c", rejected: "#888" };
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between",
-      padding: "12px 0", borderBottom: "1px solid #f0f0f0" }}>
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between",
+      padding: "12px 0", borderBottom: "1px solid #f0f0f0"
+    }}>
       <div>
         <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111" }}>
           {locLabel(ride.pickup)} → {locLabel(ride.destination)}
@@ -162,53 +193,63 @@ function HistoryRow({ ride }) {
           {new Date(ride.createdAt).toLocaleString()}
         </p>
       </div>
-      <span style={{ fontSize: 11, fontWeight: 700, textTransform: "capitalize",
+      <span style={{
+        fontSize: 11, fontWeight: 700, textTransform: "capitalize",
         color: statusColor[ride.status] || "#888",
         background: (statusColor[ride.status] || "#888") + "18",
-        padding: "4px 12px", borderRadius: 20 }}>{ride.status}</span>
+        padding: "4px 12px", borderRadius: 20
+      }}>{ride.status}</span>
     </div>
   );
 }
 
 // ── MAIN DRIVER PAGE ─────────────────────────────────────────────
 export default function DriverHome({ user, onLogout, onDashboard }) {
-  const [isOnline,     setIsOnline]     = useState(false);
-  const [requests,     setRequests]     = useState([]);
-  const [activeRide,   setActiveRide]   = useState(null);
-  const [history,      setHistory]      = useState([]);
-  const [tab,          setTab]          = useState("requests"); // "requests" | "history"
-  const [toastMsg,     setToastMsg]     = useState(null);
-  const [liveRating,   setLiveRating]   = useState(null);
+  const [isOnline, setIsOnline] = useState(false);
+  const [requests, setRequests] = useState([]);
+  const [activeRide, setActiveRide] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [tab, setTab] = useState("requests"); // "requests" | "history"
+  const [toastMsg, setToastMsg] = useState(null);
+  const [liveRating, setLiveRating] = useState(null);
+  const [currentLocation, setCurrentLocation] = useState(null);
 
   function showToast(msg, type = "info") {
     setToastMsg({ msg, type });
     setTimeout(() => setToastMsg(null), 3000);
   }
 
+  const syncDriverState = () => {
+    setRequests(rideStore.getPendingRequests(user.id));
+    const ar = rideStore.getDriverActiveRide(user.id);
+    setActiveRide(ar || null);
+    setHistory(rideStore.getDriverHistory(user.id));
+    const status = rideStore.getDriverStatus(user.id);
+    setIsOnline(status?.isOnline || false);
+    setCurrentLocation(status?.coords ? { lat: status.coords[0], lng: status.coords[1] } : null);
+    // read live avg rating from submitted ratings
+    const ratings = rideStore.getRatings(user.id);
+    if (ratings.length > 0) {
+      const avg = (ratings.reduce((s, r) => s + r.stars, 0) / ratings.length).toFixed(1);
+      setLiveRating(avg);
+    }
+    if (!ratings.length) {
+      setLiveRating(null);
+    }
+  };
+
   // poll store every 1.5s
   useEffect(() => {
-    const sync = () => {
-      setRequests(rideStore.getPendingRequests(user.id));
-      const ar = rideStore.getDriverActiveRide(user.id);
-      setActiveRide(ar || null);
-      setHistory(rideStore.getDriverHistory(user.id));
-      const status = rideStore.getDriverStatus(user.id);
-      setIsOnline(status?.isOnline || false);
-      // read live avg rating from submitted ratings
-      const ratings = rideStore.getRatings(user.id);
-      if (ratings.length > 0) {
-        const avg = (ratings.reduce((s, r) => s + r.stars, 0) / ratings.length).toFixed(1);
-        setLiveRating(avg);
-      }
-    };
-    sync();
-    const id = setInterval(sync, 1500);
+    syncDriverState();
+    const id = setInterval(syncDriverState, 1500);
     return () => clearInterval(id);
   }, [user.id]);
+
 
   function toggleOnline() {
     const next = !isOnline;
     rideStore.setDriverOnline(user.id, user.name, user.vehicle || "E-Rickshaw", next);
+    socket.emit("driver-status", { driverId: user.id, isOnline: next });
     setIsOnline(next);
     showToast(next ? "You are now online and visible to passengers" : "You are offline", next ? "success" : "info");
   }
@@ -216,7 +257,16 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
   function handleAccept(rideId) {
     const ok = rideStore.acceptRide(rideId, user.id, user.name, user.vehicle || "E-Rickshaw");
     if (!ok) { showToast("This ride was already taken by another driver", "error"); return; }
+
+    socket.emit("ride-accepted", { rideId, status: "accepted", driverId: user.id, driverName: user.name });
+
     showToast("Ride accepted! Head to the pickup point.", "success");
+
+
+
+
+
+
   }
 
   function handleReject(rideId, reason) {
@@ -225,8 +275,90 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
 
   function handleComplete(rideId) {
     rideStore.completeRide(rideId);
-    showToast("Ride completed!", "success");
+
+    socket.emit("ride-completed", { rideId, status: "completed", driverId: user.id });
+
+    showToast("Ride completed! Waiting for passenger rating...", "success");
+
+
+
   }
+
+
+  useEffect(() => {
+    socket.on("ride-request-update", () => {
+      syncDriverState();
+    });
+
+    socket.on("ride-cancelled-update", () => {
+      syncDriverState();
+    });
+
+    return () => {
+      socket.off("ride-request-update");
+      socket.off("ride-cancelled-update");
+    };
+  }, [user.id]);
+
+
+  useEffect(() => {
+    if (!isOnline) return;
+
+    let watchId = null;
+    let intervalId = null;
+    let lat = 29.8665;
+    let lng = 77.8955;
+
+    const emitLocation = (latitude, longitude) => {
+      rideStore.updateDriverLocation(user.id, latitude, longitude);
+      setCurrentLocation({ lat: latitude, lng: longitude });
+      socket.emit("driver-location", {
+        driverId: user.id,
+        lat: latitude,
+        lng: longitude,
+      });
+      console.log("Location Emitted:", latitude, longitude);
+    };
+
+    const startDummyLocation = () => {
+      intervalId = window.setInterval(() => {
+        lat += (Math.random() - 0.5) * 0.0005;
+        lng += (Math.random() - 0.5) * 0.0005;
+        emitLocation(lat, lng);
+      }, 3000);
+    };
+
+    if (typeof navigator !== "undefined" && navigator.geolocation) {
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          emitLocation(pos.coords.latitude, pos.coords.longitude);
+        },
+        (error) => {
+          console.log("Geolocation failed, using dummy location:", error);
+          showToast("Unable to get GPS position. Using simulated location instead.", "error");
+          startDummyLocation();
+        },
+        {
+          enableHighAccuracy: false,
+          maximumAge: 60000,
+          timeout: 20000,
+        }
+      );
+    } else {
+      startDummyLocation();
+    }
+
+    return () => {
+      if (watchId !== null && typeof navigator !== "undefined" && navigator.geolocation) {
+        navigator.geolocation.clearWatch(watchId);
+      }
+      if (intervalId !== null) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [isOnline, user.id]);
+
+
 
   const completed = history.filter(r => r.status === "completed").length;
   const rating = liveRating || user.rating || "—";
@@ -256,13 +388,17 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
         )}
 
         {/* ── navbar ── */}
-        <div style={{ background: "#fff", borderBottom: "1px solid #eee",
+        <div style={{
+          background: "#fff", borderBottom: "1px solid #eee",
           padding: "14px 24px", display: "flex", alignItems: "center",
-          justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100 }}>
+          justifyContent: "space-between", position: "sticky", top: 0, zIndex: 100
+        }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <div style={{ width: 36, height: 36, borderRadius: 10, background: "#111",
+            <div style={{
+              width: 36, height: 36, borderRadius: 10, background: "#111",
               display: "flex", alignItems: "center", justifyContent: "center",
-              color: "#fff", fontSize: 16 }}>🛺</div>
+              color: "#fff", fontSize: 16
+            }}>🛺</div>
             <div>
               <p style={{ margin: 0, fontWeight: 700, fontSize: 15, color: "#111" }}>Campus Ride</p>
               <p style={{ margin: 0, fontSize: 11, color: "#888" }}>Driver console</p>
@@ -271,8 +407,10 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <PulseDot color={isOnline ? "#27ae60" : "#ccc"} />
-              <span style={{ fontSize: 12, fontWeight: 700,
-                color: isOnline ? "#27ae60" : "#999" }}>
+              <span style={{
+                fontSize: 12, fontWeight: 700,
+                color: isOnline ? "#27ae60" : "#999"
+              }}>
                 {isOnline ? "Online" : "Offline"}
               </span>
             </div>
@@ -287,17 +425,21 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
                 color: "#fff", fontFamily: "inherit", fontWeight: 700,
               }}>Dashboard</button>
             )}
-            <button onClick={onLogout} style={{ background: "none", border: "1px solid #eee",
+            <button onClick={onLogout} style={{
+              background: "none", border: "1px solid #eee",
               borderRadius: 8, padding: "6px 14px", fontSize: 12, cursor: "pointer",
-              color: "#888", fontFamily: "inherit" }}>Logout</button>
+              color: "#888", fontFamily: "inherit"
+            }}>Logout</button>
           </div>
         </div>
 
         <div style={{ maxWidth: 640, margin: "0 auto", padding: "24px 16px" }}>
 
           {/* ── online toggle ── */}
-          <div style={{ background: "#fff", borderRadius: 18, padding: 24, marginBottom: 20,
-            border: "1px solid #eee" }}>
+          <div style={{
+            background: "#fff", borderRadius: 18, padding: 24, marginBottom: 20,
+            border: "1px solid #eee"
+          }}>
             <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
               <div>
                 <p style={{ margin: 0, fontWeight: 700, fontSize: 16, color: "#111" }}>
@@ -326,16 +468,20 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
             </div>
 
             {isOnline && (
-              <div style={{ marginTop: 16, padding: "10px 14px", background: "#f0fff4",
+              <div style={{
+                marginTop: 16, padding: "10px 14px", background: "#f0fff4",
                 borderRadius: 10, border: "1px solid #b7f5cf",
-                fontSize: 13, color: "#27ae60", fontWeight: 600 }}>
+                fontSize: 13, color: "#27ae60", fontWeight: 600
+              }}>
                 🟢 Waiting for ride requests near IIT Roorkee campus
               </div>
             )}
             {!isOnline && (
-              <div style={{ marginTop: 16, padding: "10px 14px", background: "#f5f5f5",
+              <div style={{
+                marginTop: 16, padding: "10px 14px", background: "#f5f5f5",
                 borderRadius: 10, border: "1px solid #e5e5e5",
-                fontSize: 13, color: "#aaa" }}>
+                fontSize: 13, color: "#aaa"
+              }}>
                 You won't receive any requests while offline
               </div>
             )}
@@ -351,6 +497,31 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
               sub={isOnline ? "online" : "offline"} color={isOnline ? "#27ae60" : "#888"} />
           </div>
 
+          <div style={{
+            background: "#fff", borderRadius: 18, padding: 18,
+            border: "1px solid #eee", marginBottom: 20, display: "flex",
+            justifyContent: "space-between", alignItems: "center"
+          }}>
+            <div>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#111" }}>Live GPS status</p>
+              <p style={{ margin: "6px 0 0", fontSize: 12, color: "#666" }}>
+                {isOnline ? (
+                  currentLocation
+                    ? `Sharing location: ${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}`
+                    : "Waiting for GPS fix..."
+                ) : "Go online to start sharing your location."}
+              </p>
+            </div>
+            <div style={{
+              padding: "10px 14px", borderRadius: 14,
+              background: isOnline ? "#e8f8f2" : "#f5f5f5",
+              color: isOnline ? "#27ae60" : "#888",
+              fontWeight: 700, fontSize: 12
+            }}>
+              {isOnline ? "GPS active" : "GPS paused"}
+            </div>
+          </div>
+
           {/* ── active ride ── */}
           {activeRide && (
             <ActiveRideCard ride={activeRide} onComplete={handleComplete} />
@@ -359,8 +530,10 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
           {/* ── requests + history tabs ── */}
           {!activeRide && (
             <>
-              <div style={{ background: "#f0f0f0", borderRadius: 12, padding: 4,
-                display: "inline-flex", marginBottom: 16 }}>
+              <div style={{
+                background: "#f0f0f0", borderRadius: 12, padding: 4,
+                display: "inline-flex", marginBottom: 16
+              }}>
                 <button className={`tab-btn ${tab === "requests" ? "active" : ""}`}
                   onClick={() => setTab("requests")}>
                   Requests {requests.length > 0 && `(${requests.length})`}
@@ -392,15 +565,17 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
               )}
 
               {tab === "history" && (
-                <div style={{ background: "#fff", borderRadius: 18, padding: 20,
-                  border: "1px solid #eee" }}>
+                <div style={{
+                  background: "#fff", borderRadius: 18, padding: 20,
+                  border: "1px solid #eee"
+                }}>
                   <p style={{ margin: "0 0 12px", fontWeight: 700, fontSize: 15, color: "#111" }}>
                     Ride history
                   </p>
                   {history.length === 0
                     ? <p style={{ color: "#aaa", fontSize: 14, textAlign: "center", padding: "24px 0" }}>
-                        No rides yet
-                      </p>
+                      No rides yet
+                    </p>
                     : history.slice().reverse().map(r => <HistoryRow key={r.id} ride={r} />)
                   }
                 </div>
