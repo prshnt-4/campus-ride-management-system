@@ -50,12 +50,28 @@ io.on("connection", (socket) => {
         io.emit("driver-status-update", data);
     }),
 
-        socket.on("ride-request", (ride) => {
-            io.emit("ride-request-update", ride);
-        });
+    socket.on("ride-request", (ride) => {
+        io.emit("ride-request-update", ride);
+    });
+
+    socket.on("ride-scheduled", (ride) => {
+        io.emit("ride-scheduled-update", ride);
+    });
+
+    socket.on("wallet-update", (data) => {
+        io.emit("wallet-update-event", data);
+    });
 
     socket.on("ride-accepted", (ride) => {
         io.emit("ride-accepted-update", ride);
+    });
+
+    socket.on("ride-started", (ride) => {
+        io.emit("ride-started-update", ride);
+    });
+
+    socket.on("ride-arrived", (ride) => {
+        io.emit("ride-arrived-update", ride);
     });
 
     socket.on("ride-completed", (ride) => {

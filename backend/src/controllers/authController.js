@@ -84,6 +84,7 @@ const registerUser = async (req, res) => {
 };
 
 const loginUser = async (req, res) => {
+    console.log("REGISTER CONTROLLER HIT");
     try {
         const { email, password } = req.body;
 
@@ -133,6 +134,8 @@ const loginUser = async (req, res) => {
         });
     }
 };
+
+
 
 module.exports = {
     registerUser,

@@ -54,6 +54,71 @@ body {
   margin: 0;
 }
 
+button {
+  font-family: inherit;
+}
+
+.ride-tab-bar {
+  width: 100%;
+  box-sizing: border-box;
+  display: grid;
+  gap: 6px;
+  margin-bottom: 20px;
+  padding: 6px;
+  border: 1px solid #e5e5e5;
+  border-radius: 14px;
+  background: #ededeb;
+}
+
+.ride-tab-bar.driver-tabs {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.ride-tab-bar.passenger-tabs {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tab-btn {
+  min-height: 50px;
+  padding: 12px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: transparent;
+  color: #777;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 160ms ease, color 160ms ease, box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.tab-btn:hover {
+  background: #fff;
+  color: #111;
+}
+
+.tab-btn:active {
+  transform: translateY(1px);
+}
+
+.tab-btn.active {
+  border-color: #111;
+  background: #111;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(17, 17, 17, 0.18);
+}
+
+@media (max-width: 600px) {
+  .ride-tab-bar.driver-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .tab-btn {
+    min-height: 46px;
+    font-size: 12px;
+  }
+}
+
 #root {
   width: 1126px;
   max-width: 100%;
