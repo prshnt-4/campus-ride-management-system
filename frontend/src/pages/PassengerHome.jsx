@@ -738,18 +738,40 @@ export default function PassengerHome({ user, onLogout }) {
   const [showWallet, setShowWallet]   = useState(false);
   const prevStatusRef = useRef(null);
 
-  const syncRideData = () => {
-    setDrivers(rideStore.getOnlineDrivers());
-    setWalletBalance(rideStore.getUserWallet(user.id));
-    const myRide = rideStore.getPassengerRide(user.id);
-    if (myRide) {
-      if (myRide.status === "completed" && prevStatusRef.current !== "completed" && !myRide.rated) {
-        setShowRating(true);
-      }
-      prevStatusRef.current = myRide.status;
-      setRide(myRide);
+const syncRideData = async () => {
+  try {
+    const res = await fetch(
+      `${API_BASE}/drivers/available`
+    );
+
+    const data = await res.json();
+
+    if (data.success) {
+      setDrivers(data.onlineDrivers);
     }
-  };
+  } catch (err) {
+    console.log(err);
+  }
+
+  setWalletBalance(
+    rideStore.getUserWallet(user.id)
+  );
+
+  const myRide =
+    rideStore.getPassengerRide(user.id);
+
+  if (myRide) {
+    if (
+      myRide.status === "completed" &&
+      prevStatusRef.current !== "completed"
+    ) {
+      setShowRating(true);
+    }
+
+    prevStatusRef.current = myRide.status;
+    setRide(myRide);
+  }
+};
 
   // poll store every 1.5 s
   useEffect(() => {
