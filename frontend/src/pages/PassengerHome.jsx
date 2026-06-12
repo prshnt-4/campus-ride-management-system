@@ -738,40 +738,23 @@ export default function PassengerHome({ user, onLogout }) {
   const [showWallet, setShowWallet]   = useState(false);
   const prevStatusRef = useRef(null);
 
-const syncRideData = async () => {
-  try {
-    const res = await fetch(
-      `${API_BASE}/drivers/available`
-    );
+  const syncRideData = () => {
+    setDrivers(rideStore.getOnlineDrivers());
+    setWalletBalance(rideStore.getUserWallet(user.id));
 
-    const data = await res.json();
+    const myRide = rideStore.getPassengerRide(user.id);
+    if (myRide) {
+      if (
+        myRide.status === "completed" &&
+        prevStatusRef.current !== "completed"
+      ) {
+        setShowRating(true);
+      }
 
-    if (data.success) {
-      setDrivers(data.onlineDrivers);
+      prevStatusRef.current = myRide.status;
+      setRide(myRide);
     }
-  } catch (err) {
-    console.log(err);
-  }
-
-  setWalletBalance(
-    rideStore.getUserWallet(user.id)
-  );
-
-  const myRide =
-    rideStore.getPassengerRide(user.id);
-
-  if (myRide) {
-    if (
-      myRide.status === "completed" &&
-      prevStatusRef.current !== "completed"
-    ) {
-      setShowRating(true);
-    }
-
-    prevStatusRef.current = myRide.status;
-    setRide(myRide);
-  }
-};
+  };
 
   // poll store every 1.5 s
   useEffect(() => {
@@ -804,6 +787,12 @@ const syncRideData = async () => {
       socket.off("wallet-update-event",    syncRideData);
     };
   }, []);
+
+  useEffect(() => {
+    const refreshSharedState = () => syncRideData();
+    window.addEventListener("shared-ride-state-updated", refreshSharedState);
+    return () => window.removeEventListener("shared-ride-state-updated", refreshSharedState);
+  }, [user.id]);
 
   function handleRequestRide() {
     if (!pickup || !destination) return;

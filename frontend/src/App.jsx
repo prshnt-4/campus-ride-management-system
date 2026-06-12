@@ -7,21 +7,24 @@ import DriverDashboard from "./pages/DriverDashboard";
 import { rideStore } from "./rideStore";
 import socket from "./socket";
 
-export default function App() {
-  const [user,   setUser]   = useState(null);
-  const [screen, setScreen] = useState("auth");
-  const [rideNotification, setRideNotification] = useState(null);
+function savedUser() {
+  try {
+    const saved = localStorage.getItem("rnn_user");
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+}
 
-  useEffect(() => {
-    try {
-      const saved = localStorage.getItem("rnn_user");
-      if (saved) {
-        const u = JSON.parse(saved);
-        setUser(u);
-        setScreen(u.role === "driver" ? "driver" : "passenger");
-      }
-    } catch {}
-  }, []);
+export default function App() {
+  const [user, setUser] = useState(savedUser);
+  const [screen, setScreen] = useState(() => {
+    const restoredUser = savedUser();
+    return restoredUser
+      ? (restoredUser.role === "driver" ? "driver" : "passenger")
+      : "auth";
+  });
+  const [rideNotification, setRideNotification] = useState(null);
 
   useEffect(() => {
     if (user?.role !== "driver") return undefined;
@@ -34,6 +37,40 @@ export default function App() {
 
     socket.on("ride-request-update", handleRideRequest);
     return () => socket.off("ride-request-update", handleRideRequest);
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) return undefined;
+
+    const syncSharedState = (state) => {
+      const localDriver = user.role === "driver"
+        ? rideStore.getDriverStatus(user.id)
+        : null;
+      const remoteHasDriver = Boolean(state?.drivers?.[user.id]);
+
+      if (localDriver?.isOnline && !remoteHasDriver) {
+        const driver = {
+          ...localDriver,
+          driverId: user.id,
+          name: user.name,
+          vehicle: user.vehicle || "E-Rickshaw"
+        };
+        socket.emit("driver-status", driver);
+        rideStore.replaceSharedState({
+          ...state,
+          drivers: { ...(state?.drivers || {}), [user.id]: driver }
+        });
+      } else {
+        rideStore.replaceSharedState(state);
+      }
+
+      window.dispatchEvent(new Event("shared-ride-state-updated"));
+    };
+
+    socket.on("shared-state-update", syncSharedState);
+    socket.emit("request-shared-state");
+
+    return () => socket.off("shared-state-update", syncSharedState);
   }, [user]);
 
   useEffect(() => {

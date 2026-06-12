@@ -465,7 +465,11 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
   function toggleOnline() {
     const next = !isOnline;
     rideStore.setDriverOnline(user.id, user.name, user.vehicle || "E-Rickshaw", next);
-    socket.emit("driver-status", { driverId: user.id, isOnline: next });
+    socket.emit("driver-status", {
+      ...rideStore.getDriverStatus(user.id),
+      driverId: user.id,
+      isOnline: next
+    });
     setIsOnline(next);
     showToast(next ? "You are now online and visible to passengers" : "You are offline", next ? "success" : "info");
   }
@@ -546,7 +550,18 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
     const handleRideRequest = () => {
       syncDriverState();
     };
+    const publishDriverState = () => {
+      const status = rideStore.getDriverStatus(user.id);
+      if (!status?.isOnline) return;
+      socket.emit("driver-status", {
+        ...status,
+        driverId: user.id,
+        name: user.name,
+        vehicle: user.vehicle || "E-Rickshaw"
+      });
+    };
 
+    socket.on("connect", publishDriverState);
     socket.on("ride-request-update", handleRideRequest);
     socket.on("ride-cancelled-update", syncDriverState);
     socket.on("ride-started-update", syncDriverState);
@@ -554,6 +569,7 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
     socket.on("wallet-update-event", syncDriverState);
 
     return () => {
+      socket.off("connect", publishDriverState);
       socket.off("ride-request-update", handleRideRequest);
       socket.off("ride-cancelled-update", syncDriverState);
       socket.off("ride-started-update", syncDriverState);
@@ -567,9 +583,14 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
       setTab("requests");
       syncDriverState();
     };
+    const refreshSharedState = () => syncDriverState();
 
     window.addEventListener("open-driver-requests", openRequests);
-    return () => window.removeEventListener("open-driver-requests", openRequests);
+    window.addEventListener("shared-ride-state-updated", refreshSharedState);
+    return () => {
+      window.removeEventListener("open-driver-requests", openRequests);
+      window.removeEventListener("shared-ride-state-updated", refreshSharedState);
+    };
   }, [user.id]);
 
 

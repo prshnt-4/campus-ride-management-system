@@ -20,6 +20,13 @@ const DEMO_COORDS = [
 ];
 
 const TOTAL_SEATS = 4;
+const DEMO_DEMAND_BASELINE = {
+  hostel_bhawan: 31,
+  lecture_hall: 29,
+  gate_main: 6,
+  library: 5,
+  sports: 4,
+};
 
 function rideSeats(ride) {
   const requested = Number(ride?.seatsRequired ?? ride?.passengerCount ?? 1);
@@ -66,6 +73,11 @@ function currentDriver(driver) {
 }
 
 export const rideStore = {
+
+  replaceSharedState({ drivers = {}, rides = [] } = {}) {
+    write(DRIVERS_KEY, drivers);
+    write(RIDES_KEY, rides);
+  },
 
   // ── DRIVER STATUS ──────────────────────────────────────────────
 
@@ -426,20 +438,9 @@ export const rideStore = {
     const rides = readArr(RIDES_KEY);
     const locCounts = {};
 
-    // Seed some mock historical rides if completely empty for a better demo
+    // Use a stable demo baseline until enough real ride history exists.
     if (rides.length < 5) {
-      // User request: from morning 8 to 6 pm every hr there is peak demand for bhawan to lecture hall and vice versa
-      const mockLocs = ["gate_main", "library", "sports"];
-      for (let i = 0; i < 75; i++) {
-        // Skew 80% to either hostel_bhawan or lecture_hall
-        let loc;
-        const rand = Math.random();
-        if (rand < 0.4) loc = "hostel_bhawan";
-        else if (rand < 0.8) loc = "lecture_hall";
-        else loc = mockLocs[Math.floor(Math.random() * mockLocs.length)];
-
-        locCounts[loc] = (locCounts[loc] || 0) + 1;
-      }
+      Object.assign(locCounts, DEMO_DEMAND_BASELINE);
     }
 
     // Aggregate actual rides
