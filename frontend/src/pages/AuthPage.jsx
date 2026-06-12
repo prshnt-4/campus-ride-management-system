@@ -8,7 +8,7 @@ import { useState } from "react";
    Backend: replace API_BASE with your Express URL
 ───────────────────────────────────────── */
 
-const API_BASE = "https://campus-ride-management-system-backend.onrender.com"
+const API_BASE = "https://campus-ride-management-system-backend.onrender.com/api"
 
 // ── tiny helper ──────────────────────────
 async function apiFetch(path, body) {
