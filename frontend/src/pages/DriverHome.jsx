@@ -4,21 +4,7 @@
 import { useState, useEffect } from "react";
 import { rideStore } from "../rideStore";
 import socket from "../socket";
-
-const CAMPUS_LOCATIONS = [
-  { id: "gate_main", label: "Main Gate", coords: [29.8631, 77.8932] },
-  { id: "gate_civil", label: "Civil Lines Gate", coords: [29.8702, 77.8968] },
-  { id: "thomso", label: "Thomso Bhawan", coords: [29.8678, 77.8945] },
-  { id: "convocation", label: "Convocation Hall", coords: [29.8661, 77.8961] },
-  { id: "library", label: "James Thomason Library", coords: [29.8669, 77.8950] },
-  { id: "lecture_hall", label: "Lecture Hall Complex", coords: [29.8654, 77.8940] },
-  { id: "hostel_bhawan", label: "Bhawan (Hostels)", coords: [29.8690, 77.8980] },
-  { id: "sports", label: "Sports Complex", coords: [29.8640, 77.8995] },
-  { id: "hospital", label: "IITR Hospital", coords: [29.8710, 77.8925] },
-  { id: "admin", label: "Admin Block", coords: [29.8665, 77.8955] },
-  { id: "canteen", label: "New Canteen", coords: [29.8680, 77.8942] },
-  { id: "workshop", label: "Workshop / Machine Lab", coords: [29.8648, 77.8925] },
-];
+import { CAMPUS_LOCATIONS } from "../campusLocations";
 
 function locLabel(id) {
   return CAMPUS_LOCATIONS.find(l => l.id === id)?.label || id;
@@ -505,7 +491,7 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
   function handleWithdrawFunds(amount) {
     const success = rideStore.withdrawFunds(user.id, amount);
     if (success) {
-      socket.emit("wallet-update", { driverId: user.id });
+      socket.emit("wallet-withdraw", { userId: user.id, amount });
       showToast(`Successfully withdrew ₹${amount}!`, "success");
     } else {
       showToast("Withdrawal failed. Insufficient funds.", "error");
@@ -524,14 +510,14 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
     rideStore.completeRide(rideId);
     if (completedRide) {
       const fare = 10 * (completedRide.passengerCount || 1);
-      const success = rideStore.transferFunds(completedRide.passengerId, user.id, fare);
-      if (success) {
-        socket.emit("wallet-update", { driverId: user.id, passengerId: completedRide.passengerId });
-      } else {
-        showToast("Passenger has insufficient funds, but ride completed.", "error");
-      }
+      socket.emit("ride-completed", {
+        rideId,
+        status: "completed",
+        driverId: user.id,
+        passengerId: completedRide.passengerId,
+        fare
+      });
     }
-    socket.emit("ride-completed", { rideId, status: "completed", driverId: user.id });
     showToast("Ride completed! Fare collected. Waiting for rating...", "success");
   }
 
@@ -567,6 +553,7 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
     socket.on("ride-started-update", syncDriverState);
     socket.on("ride-scheduled-update", syncDriverState);
     socket.on("wallet-update-event", syncDriverState);
+    socket.on("rating-update", syncDriverState);
 
     return () => {
       socket.off("connect", publishDriverState);
@@ -575,6 +562,7 @@ export default function DriverHome({ user, onLogout, onDashboard }) {
       socket.off("ride-started-update", syncDriverState);
       socket.off("ride-scheduled-update", syncDriverState);
       socket.off("wallet-update-event", syncDriverState);
+      socket.off("rating-update", syncDriverState);
     };
   }, [user.id]);
 

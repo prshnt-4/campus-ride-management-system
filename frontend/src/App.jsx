@@ -68,6 +68,10 @@ export default function App() {
     };
 
     socket.on("shared-state-update", syncSharedState);
+    socket.emit("wallet-register", {
+      userId: user.id,
+      balance: rideStore.getUserWallet(user.id)
+    });
     socket.emit("request-shared-state");
 
     return () => socket.off("shared-state-update", syncSharedState);

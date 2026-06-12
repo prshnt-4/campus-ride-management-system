@@ -19,6 +19,8 @@ const { Server } = require("socket.io");
 const server = http.createServer(app);
 const liveDrivers = new Map();
 const liveRides = new Map();
+const liveRatings = new Map();
+const liveWallets = new Map();
 
 
 app.use(cors());
@@ -69,7 +71,9 @@ function sharedState() {
 
     return {
         drivers,
-        rides: Array.from(liveRides.values())
+        rides: Array.from(liveRides.values()),
+        ratings: Object.fromEntries(liveRatings),
+        wallets: Object.fromEntries(liveWallets)
     };
 }
 
@@ -122,8 +126,67 @@ io.on("connection", (socket) => {
         io.emit("ride-scheduled-update", ride);
     });
 
-    socket.on("wallet-update", (data) => {
-        io.emit("wallet-update-event", data);
+    socket.on("wallet-register", ({ userId, balance }) => {
+        if (!userId || liveWallets.has(userId)) return;
+        liveWallets.set(userId, Math.max(0, Number(balance) || 0));
+        emitSharedState();
+    });
+
+    socket.on("wallet-add", ({ userId, amount }) => {
+        if (!userId || Number(amount) <= 0) return;
+        const balance = liveWallets.get(userId) || 0;
+        liveWallets.set(userId, balance + Number(amount));
+        emitSharedState();
+        io.emit("wallet-update-event", { userId, balance: liveWallets.get(userId) });
+    });
+
+    socket.on("wallet-withdraw", ({ userId, amount }) => {
+        if (!userId || Number(amount) <= 0) return;
+        const balance = liveWallets.get(userId) || 0;
+        if (balance < Number(amount)) return;
+        liveWallets.set(userId, balance - Number(amount));
+        emitSharedState();
+        io.emit("wallet-update-event", { userId, balance: liveWallets.get(userId) });
+    });
+
+    socket.on("rating-submitted", (rating) => {
+        if (!rating?.driverId || !rating?.rideId || !rating?.stars) return;
+
+        const driverRatings = liveRatings.get(rating.driverId) || [];
+        const withoutDuplicate = driverRatings.filter(item => item.rideId !== rating.rideId);
+        const updatedRatings = [...withoutDuplicate, {
+            ...rating,
+            createdAt: rating.createdAt || Date.now()
+        }];
+        liveRatings.set(rating.driverId, updatedRatings);
+
+        const average = (
+            updatedRatings.reduce((sum, item) => sum + Number(item.stars), 0) /
+            updatedRatings.length
+        ).toFixed(1);
+
+        if (liveDrivers.has(rating.driverId)) {
+            liveDrivers.set(rating.driverId, {
+                ...liveDrivers.get(rating.driverId),
+                rating: average,
+                updatedAt: Date.now()
+            });
+        }
+
+        updateRide(rating.rideId, { rated: true });
+        emitSharedState();
+        io.emit("rating-update", {
+            driverId: rating.driverId,
+            rating: average,
+            review: rating
+        });
+    });
+
+    socket.on("rating-skipped", ({ rideId }) => {
+        if (!rideId) return;
+        const updatedRide = updateRide(rideId, { ratingSkipped: true });
+        emitSharedState();
+        io.emit("rating-update", { rideId, ratingSkipped: true, ride: updatedRide });
     });
 
     socket.on("ride-accepted", (ride) => {
@@ -157,13 +220,44 @@ io.on("connection", (socket) => {
     });
 
     socket.on("ride-completed", (ride) => {
+        const existingRide = liveRides.get(ride?.rideId);
+        if (!existingRide) return;
+
+        const fare = Number(
+            ride?.fare ||
+            10 * Number(existingRide.passengerCount || existingRide.seatsRequired || 1)
+        );
+        const passengerId = ride?.passengerId || existingRide.passengerId;
+        const driverId = ride?.driverId || existingRide.driverId;
+        let paymentStatus = existingRide.paymentStatus;
+
+        if (!existingRide.paymentProcessed && passengerId && driverId && fare > 0) {
+            const passengerBalance = liveWallets.get(passengerId) || 0;
+            if (passengerBalance >= fare) {
+                liveWallets.set(passengerId, passengerBalance - fare);
+                liveWallets.set(driverId, (liveWallets.get(driverId) || 0) + fare);
+                paymentStatus = "paid";
+            } else {
+                paymentStatus = "insufficient_funds";
+            }
+        }
+
         const updatedRide = updateRide(ride?.rideId, {
             ...ride,
             status: "completed",
-            completedAt: Date.now()
+            completedAt: Date.now(),
+            fare,
+            paymentProcessed: paymentStatus === "paid",
+            paymentStatus
         });
         emitSharedState();
         io.emit("ride-completed-update", updatedRide);
+        io.emit("wallet-update-event", {
+            passengerId,
+            driverId,
+            fare,
+            paymentStatus
+        });
     });
 
     socket.on("ride-cancelled", (ride) => {

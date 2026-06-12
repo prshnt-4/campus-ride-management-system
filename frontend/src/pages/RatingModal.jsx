@@ -6,6 +6,8 @@
 //   onSkip     - called when passenger dismisses without rating
 
 import { useState } from "react";
+import { rideStore } from "../rideStore";
+import socket from "../socket";
 
 const QUICK_TAGS = [
   { id: "on_time",    label: "On time"       },
@@ -73,29 +75,19 @@ export default function RatingModal({ ride, onSubmit, onSkip }) {
 
   function handleSubmit() {
     if (!stars) return;
-    // persist to localStorage — same key DriverDashboard reads
-    try {
-      const key  = "rnn_ratings_" + ride.driverId;
-      const prev = JSON.parse(localStorage.getItem(key) || "[]");
-      prev.push({
-        rideId: ride.id, driverId: ride.driverId, driverName: ride.driverName,
-        passengerId: ride.passengerId, stars, tags, feedback, createdAt: Date.now(),
-      });
-      localStorage.setItem(key, JSON.stringify(prev));
+    const rating = {
+      rideId: ride.id,
+      driverId: ride.driverId,
+      driverName: ride.driverName,
+      passengerId: ride.passengerId,
+      stars,
+      tags,
+      feedback,
+      createdAt: Date.now(),
+    };
 
-      // update driver's avg rating in rnn_d
-      const drivers = JSON.parse(localStorage.getItem("rnn_d") || "{}");
-      if (drivers[ride.driverId]) {
-        const avg = (prev.reduce((s,r)=>s+r.stars,0)/prev.length).toFixed(1);
-        drivers[ride.driverId].rating = avg;
-        localStorage.setItem("rnn_d", JSON.stringify(drivers));
-      }
-
-      // mark ride as rated in rnn_r
-      const rides = JSON.parse(localStorage.getItem("rnn_r") || "[]");
-      const idx   = rides.findIndex(r => r.id === ride.id);
-      if (idx !== -1) { rides[idx].rated = true; localStorage.setItem("rnn_r", JSON.stringify(rides)); }
-    } catch(e) { console.error(e); }
+    rideStore.submitRating(rating);
+    socket.emit("rating-submitted", rating);
 
     setSubmitted(true);
     setTimeout(() => onSubmit({ stars, tags, feedback }), 1400);

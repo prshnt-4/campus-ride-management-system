@@ -74,9 +74,19 @@ function currentDriver(driver) {
 
 export const rideStore = {
 
-  replaceSharedState({ drivers = {}, rides = [] } = {}) {
+  replaceSharedState({ drivers = {}, rides = [], ratings = {}, wallets } = {}) {
     write(DRIVERS_KEY, drivers);
     write(RIDES_KEY, rides);
+    if (wallets) {
+      const users = read(USERS_KEY);
+      Object.entries(wallets).forEach(([userId, balance]) => {
+        users[userId] = { ...(users[userId] || {}), balance };
+      });
+      write(USERS_KEY, users);
+    }
+    Object.entries(ratings).forEach(([driverId, driverRatings]) => {
+      write("rnn_ratings_" + driverId, driverRatings);
+    });
   },
 
   // ── DRIVER STATUS ──────────────────────────────────────────────
@@ -369,7 +379,7 @@ export const rideStore = {
 
     // store rating under driver key
     const key = "rnn_ratings_" + driverId;
-    const prev = readArr(key);
+    const prev = readArr(key).filter(rating => rating.rideId !== rideId);
     prev.push({ rideId, driverId, driverName, passengerId, stars, tags, feedback, createdAt: Date.now() });
     localStorage.setItem(key, JSON.stringify(prev));
 
@@ -386,8 +396,16 @@ export const rideStore = {
     return readArr("rnn_ratings_" + driverId);
   },
 
+  skipRating(rideId) {
+    const rides = readArr(RIDES_KEY);
+    const idx = rides.findIndex(ride => ride.id === rideId);
+    if (idx === -1) return;
+    rides[idx].ratingSkipped = true;
+    write(RIDES_KEY, rides);
+  },
+
   needsRating(ride) {
-    return ride && ride.status === "completed" && !ride.rated;
+    return ride && ride.status === "completed" && !ride.rated && !ride.ratingSkipped;
   },
 
   // ── WALLET & PAYMENTS ──────────────────────────────────────────

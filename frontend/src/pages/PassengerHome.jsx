@@ -7,24 +7,10 @@ import { useState, useEffect, useRef } from "react";
 import { rideStore } from "../rideStore";
 import RatingModal from "./RatingModal";
 import socket from "../socket";
+import { CAMPUS_CENTER, CAMPUS_LOCATIONS } from "../campusLocations";
 
 
 // ── IIT Roorkee landmarks ──────────────────────────────────────────
-const CAMPUS_CENTER = [29.8673, 77.8956];
-const CAMPUS_LOCATIONS = [
-  { id: "gate_main", label: "Main Gate", coords: [29.8631, 77.8932] },
-  { id: "gate_civil", label: "Civil Lines Gate", coords: [29.8702, 77.8968] },
-  { id: "thomso", label: "Thomso Bhawan", coords: [29.8678, 77.8945] },
-  { id: "convocation", label: "Convocation Hall", coords: [29.8661, 77.8961] },
-  { id: "library", label: "James Thomason Library", coords: [29.8669, 77.8950] },
-  { id: "lecture_hall", label: "Lecture Hall Complex", coords: [29.8654, 77.8940] },
-  { id: "hostel_bhawan", label: "Bhawan (Hostels)", coords: [29.8690, 77.8980] },
-  { id: "sports", label: "Sports Complex", coords: [29.8640, 77.8995] },
-  { id: "hospital", label: "IITR Hospital", coords: [29.8710, 77.8925] },
-  { id: "admin", label: "Admin Block", coords: [29.8665, 77.8955] },
-  { id: "canteen", label: "New Canteen", coords: [29.8680, 77.8942] },
-  { id: "workshop", label: "Workshop / Machine Lab", coords: [29.8648, 77.8925] },
-];
 
 const STATUS_CONFIG = {
   idle:        { color: "#888",    bg: "#f5f5f5", label: "No active ride" },
@@ -538,7 +524,7 @@ function CampusMap({ pickupId, destinationId, drivers, onLocationClick }) {
       attribution: "© OpenStreetMap contributors", maxZoom: 19,
     }).addTo(map);
     L.polygon(
-      [[29.8610,77.8900],[29.8730,77.8900],[29.8730,77.9020],[29.8610,77.9020]],
+      [[29.8600,77.8885],[29.8730,77.8885],[29.8730,77.9030],[29.8600,77.9030]],
       { color:"#1a73e8", weight:2, fillColor:"#1a73e8", fillOpacity:0.05, dashArray:"6 4" }
     ).addTo(map);
     mapInstance.current = map;
@@ -746,7 +732,9 @@ export default function PassengerHome({ user, onLogout }) {
     if (myRide) {
       if (
         myRide.status === "completed" &&
-        prevStatusRef.current !== "completed"
+        prevStatusRef.current !== "completed" &&
+        !myRide.rated &&
+        !myRide.ratingSkipped
       ) {
         setShowRating(true);
       }
@@ -776,6 +764,7 @@ export default function PassengerHome({ user, onLogout }) {
     socket.on("ride-completed-update",  syncRideData);
     socket.on("ride-cancelled-update",  syncRideData);
     socket.on("wallet-update-event",    syncRideData);
+    socket.on("rating-update",          syncRideData);
     return () => {
       socket.off("driver-status-update",   syncRideData);
       socket.off("driver-location-update", syncRideData);
@@ -785,6 +774,7 @@ export default function PassengerHome({ user, onLogout }) {
       socket.off("ride-completed-update",  syncRideData);
       socket.off("ride-cancelled-update",  syncRideData);
       socket.off("wallet-update-event",    syncRideData);
+      socket.off("rating-update",          syncRideData);
     };
   }, []);
 
@@ -836,7 +826,7 @@ export default function PassengerHome({ user, onLogout }) {
 
   function handleAddFunds(amount) {
     rideStore.addFunds(user.id, amount);
-    socket.emit("wallet-update", { passengerId: user.id });
+    socket.emit("wallet-add", { userId: user.id, amount });
     setShowWallet(false);
   }
 
@@ -1071,7 +1061,11 @@ export default function PassengerHome({ user, onLogout }) {
         <RatingModal
           ride={ride}
           onSubmit={() => setShowRating(false)}
-          onSkip={() => setShowRating(false)}
+          onSkip={() => {
+            rideStore.skipRating(ride.id);
+            socket.emit("rating-skipped", { rideId: ride.id });
+            setShowRating(false);
+          }}
         />
       )}
 
